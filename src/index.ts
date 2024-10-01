@@ -122,6 +122,21 @@ export class MGnifySourmash extends LitElement {
     this.requestUpdate();
   }
 
+  // Add the downloadSketch method
+  downloadSketch() {
+    // Check if the signatures are available for download
+    for (let filename in this.signatures) {
+      const sketchFilename = `${filename}.sig`;
+      const blob = new Blob([this.signatures[filename]], {
+        type: 'text/plain',
+      });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = sketchFilename;
+      link.click();
+    }
+  }
+
   renderSelectedFiles() {
     if ((this.selectedFiles?.length || 0) < 1) return '';
     return html`
@@ -130,35 +145,29 @@ export class MGnifySourmash extends LitElement {
         <ul>
           ${this.selectedFiles.map((file: File) => {
             const progress = this.progress?.[file.name] || 0;
-            const signature = this.signatures[file.name];
+            // make the name basename without extension
+            const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+            const signature = this.signatures[fileNameWithoutExt];
             const error = this.errors[file.name];
             let emoji = html``;
             if (signature) emoji = html`✅`;
             if (error)
               emoji = html`<span title=${error}>⚠️<code>${error}</code></span>`;
-            return html` <li>
-              ${file.name} ${emoji}
-              <progress
-                id=${file.name}
-                max="100"
-                value=${ifDefined(progress > 100 ? undefined : progress)}
-              >
-                ${progress.toFixed(2)}%
-              </progress>
-              ${this.show_signatures && signature?.length
-                ? html`
-                    <details>
-                      <summary>See signature</summary>
-                      <pre>${signature}</pre>
-                    </details>
-                  `
-                : ''}
-            </li>`;
+            return html`
+              <li>
+                ${file.name} ${emoji}
+                <progress value="${progress}" max="100"></progress>
+              </li>
+            `;
           })}
         </ul>
+
+        <!-- Add a Download button -->
+        <button @click=${this.downloadSketch}>Download Sketch</button>
       </div>
     `;
   }
+
   render() {
     let label = this.directory ? 'Choose a directory...' : 'Choose Files...';
     if (this.selectedFiles?.length)
