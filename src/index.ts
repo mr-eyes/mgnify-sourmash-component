@@ -78,6 +78,13 @@ export class MGnifySourmash extends LitElement {
     }
   }
 
+
+  handleInputChange<T extends keyof MGnifySourmash>(event: InputEvent, key: T) {
+    const input = event.target as HTMLInputElement;
+    this[key] = input.type === 'checkbox' ? (input.checked as any) : (Number(input.value) as any);
+}
+
+
   // Start sketching after clicking the Start button
   startSketching() {
     if (!this.selectedFiles?.length) {
@@ -177,10 +184,7 @@ export class MGnifySourmash extends LitElement {
 
     return html`
       <div class="mgnify-sourmash-component">
-        <label
-          >Select ${this.is_protein ? 'protein' : 'nucleotides'} FastA
-          files:</label
-        >
+        <label>Select ${this.is_protein ? 'protein' : 'nucleotides'} FastA files:</label>
         <label class="file" for="sourmash-selector">
           <input
             type="file"
@@ -211,6 +215,34 @@ export class MGnifySourmash extends LitElement {
               </div>
             `
           : ''}
+
+        <!-- Input controls for ksize, scaled, and track_abundance -->
+        <div>
+          <label for="ksize">K-size:</label>
+          <input
+            type="number"
+            id="ksize"
+            .value="${this.ksize}"
+            @input=${(e: InputEvent) => this.handleInputChange(e, 'ksize')}
+          />
+
+          <label for="scaled">Scaled:</label>
+          <input
+            type="number"
+            id="scaled"
+            .value="${this.scaled}"
+            @input=${(e: InputEvent) => this.handleInputChange(e, 'scaled')}
+          />
+
+          <label for="track_abundance">Track Abundance:</label>
+          <input
+            type="checkbox"
+            id="track_abundance"
+            .checked="${this.track_abundance}"
+            @input=${(e: InputEvent) => this.handleInputChange(e, 'track_abundance')}
+          />
+        </div>
+
         ${this.renderSelectedFiles()}
 
         <button @click=${this.startSketching}>Start Sketching</button>
