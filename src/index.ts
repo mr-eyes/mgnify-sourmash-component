@@ -1,20 +1,21 @@
-import { LitElement, html } from 'lit';
-import { ifDefined } from 'lit/directives/if-defined.js';
+import { LitElement, html, css, unsafeCSS } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import Worker from './sketcher.worker.ts';
 import JSZip from 'jszip';
 import style from './index.css';
 
 const worker = new Worker();
-
 const SUPPORTED_EXTENSIONS = ['.fa', '.fasta', '.fna', '.gz', '.fq', '.fastq'];
 
-@customElement('mgnify-sourmash-component')
+
+@customElement('snipe-sourmash-component')
 export class MGnifySourmash extends LitElement {
   @property({ type: Boolean, reflect: true })
   directory = false;
+
   @property({ type: Boolean })
   show_directory_checkbox = false;
+
   @property({ type: Boolean })
   show_signatures = false;
 
@@ -28,12 +29,14 @@ export class MGnifySourmash extends LitElement {
   @property({ type: Number }) scaled = 1000;
   @property({ type: Boolean }) track_abundance = false;
 
-  selectedFiles: Array<File> = null;
+  selectedFiles: Array<File> = [];
   progress: { [filename: string]: number } = {};
   signatures: { [filename: string]: string } = {};
   errors: { [filename: string]: string } = {};
 
-  static styles = [style];
+
+  // load unsafeCSS from lit to avoid security issues
+  // static styles = [unsafeCSS(style)]; 
 
   constructor() {
     super();
@@ -62,30 +65,21 @@ export class MGnifySourmash extends LitElement {
     });
   }
 
-  private haveCompletedAllSignatures() {
-    return Object.keys(this.progress).every(
-      (key: string) => key in this.signatures || key in this.errors
-    );
-  }
-
   handleFileChanges(event: InputEvent) {
     const input = event.target as HTMLInputElement;
     if (input.files) {
-      this.selectedFiles = Array.from(input.files).filter((file: File) => {
-        return SUPPORTED_EXTENSIONS.some((ext) => file.name.endsWith(ext));
-      });
+      this.selectedFiles = Array.from(input.files).filter((file: File) =>
+        SUPPORTED_EXTENSIONS.some((ext) => file.name.endsWith(ext))
+      );
       this.requestUpdate();
     }
   }
 
-
   handleInputChange<T extends keyof MGnifySourmash>(event: InputEvent, key: T) {
     const input = event.target as HTMLInputElement;
     this[key] = input.type === 'checkbox' ? (input.checked as any) : (Number(input.value) as any);
-}
+  }
 
-
-  // Start sketching after clicking the Start button
   startSketching() {
     if (!this.selectedFiles?.length) {
       alert('Please select files before starting sketching.');
@@ -149,19 +143,27 @@ export class MGnifySourmash extends LitElement {
             const progress = this.progress?.[file.name] || 0;
             const signature = this.signatures[file.name];
             const error = this.errors[file.name];
-            let emoji = html``;
-            if (signature) emoji = html`✅`;
-            if (error)
-              emoji = html`<span title=${error}>⚠️<code>${error}</code></span>`;
-            return html` <li>
-              ${file.name} ${emoji}
-              <progress
-                id=${file.name}
-                max="100"
-                value=${ifDefined(progress > 100 ? undefined : progress)}
-              >
-                ${progress.toFixed(2)}%
-              </progress>
+            let statusIcon = '';
+            if (signature) statusIcon = '✅';
+            if (error) statusIcon = `⚠️`;
+            return html`
+              <li class="list-group-item">
+              <div class="d-flex w-100 justify-content-between align-items-center">
+                <h5 class="mb-1">${file.name} ${statusIcon}</h5>
+                <div class="progress w-75 mb-1">
+                  <div
+                    class="progress-bar"
+                    role="progressbar"
+                    style="width: ${progress}%;"
+                    aria-valuenow="${progress}"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  ></div>
+                </div>
+              </div>
+              ${error
+                ? html`<div class="alert alert-danger" role="alert">${error}</div>`
+                : ''}
               ${this.show_signatures && signature?.length
                 ? html`
                     <details>
@@ -170,7 +172,8 @@ export class MGnifySourmash extends LitElement {
                     </details>
                   `
                 : ''}
-            </li>`;
+            </li>
+            `;
           })}
         </ul>
       </div>
@@ -178,85 +181,103 @@ export class MGnifySourmash extends LitElement {
   }
 
   render() {
-    let label = this.directory ? 'Choose a directory...' : 'Choose Files...';
-    if (this.selectedFiles?.length)
-      label = `${this.selectedFiles?.length} Files Selected`;
-
     return html`
-      <div class="mgnify-sourmash-component">
-        <label>Select ${this.is_protein ? 'protein' : 'nucleotides'} FastA files:</label>
-        <label class="file" for="sourmash-selector">
+    <body class="container snipe-sourmash-component mt-5">
+      <div class="container snipe-sourmash-component mt-5">
+      <style>
+        ${style}
+      </style>
+        <!-- File input -->
+        <div class="mb-3">
+          <label for="file-input" class="form-label">Select Files:</label>
           <input
+            class="form-control"
             type="file"
-            id="sourmash-selector"
-            name="sourmash-selector"
-            accept=${SUPPORTED_EXTENSIONS.join(',')}
+            id="file-input"
             @change=${this.handleFileChanges}
-            ?webkitdirectory=${this.directory}
-            ?multiple=${!this.directory}
-          />
-          <span class="file-custom" data-label=${label}></span>
-        </label>
-        ${this.show_directory_checkbox
-          ? html`
-              <div class="mode-selector">
-                <button
-                  class=${this.directory ? '' : 'selected'}
-                  @click=${() => (this.directory = false)}
-                >
-                  Files
-                </button>
-                <button
-                  class=${this.directory ? 'selected' : ''}
-                  @click=${() => (this.directory = true)}
-                >
-                  Directory
-                </button>
-              </div>
-            `
-          : ''}
-
-        <!-- Input controls for ksize, scaled, and track_abundance -->
-        <div>
-          <label for="ksize">K-size:</label>
-          <input
-            type="number"
-            id="ksize"
-            .value="${this.ksize}"
-            @input=${(e: InputEvent) => this.handleInputChange(e, 'ksize')}
-          />
-
-          <label for="scaled">Scaled:</label>
-          <input
-            type="number"
-            id="scaled"
-            .value="${this.scaled}"
-            @input=${(e: InputEvent) => this.handleInputChange(e, 'scaled')}
-          />
-
-          <label for="track_abundance">Track Abundance:</label>
-          <input
-            type="checkbox"
-            id="track_abundance"
-            .checked="${this.track_abundance}"
-            @input=${(e: InputEvent) => this.handleInputChange(e, 'track_abundance')}
+            multiple
+            accept=${SUPPORTED_EXTENSIONS.join(',')}
           />
         </div>
 
-        ${this.renderSelectedFiles()}
+        <!-- Folder input -->
+        <div class="mb-3">
+          <label for="folder-input" class="form-label">Select Folder:</label>
+          <input
+            class="form-control"
+            type="file"
+            id="folder-input"
+            webkitdirectory
+            @change=${this.handleFileChanges}
+          />
+        </div>
 
-        <button @click=${this.startSketching}>Start Sketching</button>
-        <button @click=${this.clearSession}>Clear</button>
+        <!-- Input controls for ksize, scaled, and track_abundance -->
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label for="ksize" class="form-label">K-size:</label>
+            <input
+              type="number"
+              id="ksize"
+              class="form-control"
+              .value="${this.ksize}"
+              @input=${(e: InputEvent) => this.handleInputChange(e, 'ksize')}
+            />
+          </div>
+          <div class="col-md-4">
+            <label for="scaled" class="form-label">Scaled:</label>
+            <input
+              type="number"
+              id="scaled"
+              class="form-control"
+              .value="${this.scaled}"
+              @input=${(e: InputEvent) => this.handleInputChange(e, 'scaled')}
+            />
+          </div>
+          <div class="col-md-4">
+            <div class="form-check mt-4">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="track-abundance"
+                .checked="${this.track_abundance}"
+                @input=${(e: InputEvent) => this.handleInputChange(e, 'track_abundance')}
+              />
+              <label class="form-check-label" for="track-abundance">
+                Track Abundance
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="mb-3">
+          <button class="btn btn-primary" @click=${this.startSketching}>Start Sketching</button>
+          <button class="btn btn-secondary ms-2" @click=${this.clearSession}>Clear</button>
+          ${Object.keys(this.signatures).length > 0
+            ? html`
+                <button class="btn btn-success ms-2" @click=${this.downloadAllSketches}>
+                  Download All as Zip
+                </button>
+              `
+            : ''}
+        </div>
+
+        <!-- List of individual downloads -->
+        ${this.renderSelectedFiles()}
 
         ${Object.keys(this.signatures).length > 0
           ? html`
-              <button @click=${this.downloadAllSketches}>Download All as Zip</button>
-              <ul>
+              <ul class="list-group mt-3">
                 ${Object.keys(this.signatures).map(
                   (filename) => html`
-                    <li>
-                      <button @click=${() => this.downloadSketch(filename)}>
-                        Download ${filename}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      ${filename}
+                      <button
+                        class="btn btn-outline-primary btn-sm"
+                        @click=${() => this.downloadSketch(filename)}
+                      >
+                        Download
                       </button>
                     </li>
                   `
@@ -265,12 +286,13 @@ export class MGnifySourmash extends LitElement {
             `
           : ''}
       </div>
+    </body>
     `;
   }
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    'mgnify-sourmash-component': MGnifySourmash;
+    'snipe-sourmash-component': MGnifySourmash;
   }
 }

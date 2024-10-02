@@ -21,7 +21,7 @@ module.exports = {
       },
       {
         test: /\.tsx?$/,
-        use: 'ts-loader',
+        use: ['ts-loader'],
         exclude: /node_modules/,
       },
       {
@@ -38,7 +38,7 @@ module.exports = {
     modules: [path.resolve(__dirname, 'src'), 'node_modules'],
   },
   output: {
-    filename: 'mgnify-sourmash-component.js',
+    filename: 'snipe-sourmash-component.js',
     path: path.resolve(__dirname, 'dist'),
   },
   plugins: [

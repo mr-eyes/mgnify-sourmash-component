@@ -1,9 +1,9 @@
 {
-  "name": "mgnify-sourmash-component",
-  "version": "0.3.0",
+  "name": "snipe-sourmash-component",
+  "version": "0.4.0",
   "description": "A web component to select FastA file and generate sourmash signatures locally.",
-  "module": "dist/mgnify-sourmash-component.js",
-  "main": "dist/mgnify-sourmash-component.js",
+  "module": "dist/snipe-sourmash-component.js",
+  "main": "dist/snipe-sourmash-component.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "webpack --mode=production",
@@ -27,6 +27,7 @@
     "@types/jszip": "^3.4.0",
     "@typescript-eslint/eslint-plugin": "4.31.0",
     "@typescript-eslint/parser": "4.31.0",
+    "css-loader": "^7.1.2",
     "eslint": "7.32.0",
     "eslint-config-prettier": "8.3.0",
     "eslint-import-resolver-typescript": "2.4.0",
@@ -34,11 +35,12 @@
     "eslint-plugin-prettier": "4.0.0",
     "html-webpack-plugin": "5.3.2",
     "prettier": "2.4.0",
+    "style-loader": "^4.0.0",
     "ts-loader": "9.2.5",
-    "typescript": "4.4.2",
-    "webpack": "^5.90.3",
-    "webpack-cli": "4.8.0",
-    "webpack-dev-server": "^4.15.1",
+    "typescript": "^4.4.2",
+    "webpack": "^5.95.0",
+    "webpack-cli": "^4.8.0",
+    "webpack-dev-server": "^4.15.2",
     "worker-loader": "^3.0.8"
   },
   "dependencies": {
