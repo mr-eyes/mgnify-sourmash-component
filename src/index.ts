@@ -198,96 +198,102 @@ export class MGnifySourmash extends LitElement {
 }
 
 
-  render() {
-    return html`
-    <body class="container snipe-sourmash-component mt-5">
-      <div class="container snipe-sourmash-component mt-5">
-      <style>
-        ${style}
-      </style>
-        <!-- File input -->
-        <div class="mb-3">
-          <label for="file-input" class="form-label">Select Files:</label>
-          <input
-            class="form-control"
-            type="file"
-            id="file-input"
-            @change=${this.handleFileChanges}
-            multiple
-            accept=${SUPPORTED_EXTENSIONS.join(',')}
-          />
-        </div>
-
-        <!-- Folder input -->
-        <div class="mb-3">
-          <label for="folder-input" class="form-label">Select Folder:</label>
-          <input
-            class="form-control"
-            type="file"
-            id="folder-input"
-            webkitdirectory
-            @change=${this.handleFileChanges}
-          />
-        </div>
-
-        <!-- Input controls for ksize, scaled, and track_abundance -->
-        <div class="row mb-3">
-          <div class="col-md-4">
-            <label for="ksize" class="form-label">K-size:</label>
-            <input
-              type="number"
-              id="ksize"
-              class="form-control"
-              .value="${this.ksize}"
-              @input=${(e: InputEvent) => this.handleInputChange(e, 'ksize')}
-            />
-          </div>
-          <div class="col-md-4">
-            <label for="scaled" class="form-label">Scaled:</label>
-            <input
-              type="number"
-              id="scaled"
-              class="form-control"
-              .value="${this.scaled}"
-              @input=${(e: InputEvent) => this.handleInputChange(e, 'scaled')}
-            />
-          </div>
-          <div class="col-md-4">
-            <div class="form-check mt-4">
+render() {
+  return html`
+    <style>
+      ${style}
+    </style>
+    <body class="container snipe-sourmash-component py-5">
+      <div class="container" style="max-width: 800px;">
+        <h1 class="text-center mb-4">WebSketch Dashboard</h1>
+        <div class="card">
+          <div class="card-body">
+            <!-- File input -->
+            <div class="mb-3">
+              <label for="file-input" class="form-label">Select Files:</label>
               <input
-                class="form-check-input"
-                type="checkbox"
-                id="track-abundance"
-                .checked="${this.track_abundance}"
-                @input=${(e: InputEvent) => this.handleInputChange(e, 'track_abundance')}
+                class="form-control"
+                type="file"
+                id="file-input"
+                @change=${this.handleFileChanges}
+                multiple
+                accept=${SUPPORTED_EXTENSIONS.join(',')}
               />
-              <label class="form-check-label" for="track-abundance">
-                Track Abundance
-              </label>
             </div>
+
+            <!-- Folder input -->
+            <div class="mb-3">
+              <label for="folder-input" class="form-label">Select Folder:</label>
+              <input
+                class="form-control"
+                type="file"
+                id="folder-input"
+                webkitdirectory
+                @change=${this.handleFileChanges}
+              />
+            </div>
+
+            <!-- Input controls for ksize, scaled, and track_abundance -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="ksize" class="form-label">K-size:</label>
+                <input
+                  type="number"
+                  id="ksize"
+                  class="form-control"
+                  .value="${this.ksize}"
+                  @input=${(e: InputEvent) => this.handleInputChange(e, 'ksize')}
+                />
+              </div>
+              <div class="col-md-4">
+                <label for="scaled" class="form-label">Scaled:</label>
+                <input
+                  type="number"
+                  id="scaled"
+                  class="form-control"
+                  .value="${this.scaled}"
+                  @input=${(e: InputEvent) => this.handleInputChange(e, 'scaled')}
+                />
+              </div>
+              <div class="col-md-4">
+                <div class="form-check mt-4">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="track-abundance"
+                    .checked="${this.track_abundance}"
+                    @input=${(e: InputEvent) => this.handleInputChange(e, 'track_abundance')}
+                  />
+                  <label class="form-check-label" for="track-abundance">
+                    Track Abundance
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="d-flex justify-content-between mt-4">
+              <button class="btn btn-primary" @click=${this.startSketching}>Start Sketching</button>
+              <button class="btn btn-secondary ms-2" @click=${this.clearSession}>Clear</button>
+              ${Object.keys(this.signatures).length > 0
+                ? html`
+                    <button class="btn btn-success ms-2" @click=${this.downloadAllSketches}>
+                      Download All as Zip
+                    </button>
+                  `
+                : ''}
+            </div>
+
+            <!-- List of individual downloads -->
+            ${this.renderSelectedFiles()}
           </div>
         </div>
-
-        <!-- Buttons -->
-        <div class="mb-3">
-          <button class="btn btn-primary" @click=${this.startSketching}>Start Sketching</button>
-          <button class="btn btn-secondary ms-2" @click=${this.clearSession}>Clear</button>
-          ${Object.keys(this.signatures).length > 0
-            ? html`
-                <button class="btn btn-success ms-2" @click=${this.downloadAllSketches}>
-                  Download All as Zip
-                </button>
-              `
-            : ''}
-        </div>
-
-        <!-- List of individual downloads -->
-        ${this.renderSelectedFiles()}
       </div>
     </body>
-    `;
-  }
+  `;
 }
+}
+
 
 declare global {
   interface HTMLElementTagNameMap {
