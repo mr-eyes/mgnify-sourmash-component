@@ -21,13 +21,13 @@ export class MGnifySourmash extends LitElement {
 
   // KmerMinHash parameters
   @property({ type: Number }) num = 0;
-  @property({ type: Number }) ksize = 31;
+  @property({ type: Number }) ksize = 51;
   @property({ type: Boolean }) is_protein = false;
   @property({ type: Boolean }) dayhoff = false;
   @property({ type: Boolean }) hp = false;
   @property({ type: Number }) seed = 42;
-  @property({ type: Number }) scaled = 1000;
-  @property({ type: Boolean }) track_abundance = false;
+  @property({ type: Number }) scaled = 10000;
+  @property({ type: Boolean }) track_abundance = true;
 
   selectedFiles: Array<File> = [];
   progress: { [filename: string]: number } = {};
@@ -138,7 +138,7 @@ export class MGnifySourmash extends LitElement {
     return html`
       <div>
         <h2>Selected Files:</h2>
-        <ul>
+        <ul class="list-group">
           ${this.selectedFiles.map((file: File) => {
             const progress = this.progress?.[file.name] || 0;
             const signature = this.signatures[file.name];
@@ -146,39 +146,57 @@ export class MGnifySourmash extends LitElement {
             let statusIcon = '';
             if (signature) statusIcon = '✅';
             if (error) statusIcon = `⚠️`;
+
             return html`
               <li class="list-group-item">
-              <div class="d-flex w-100 justify-content-between align-items-center">
-                <h5 class="mb-1">${file.name} ${statusIcon}</h5>
-                <div class="progress w-75 mb-1">
-                  <div
-                    class="progress-bar"
-                    role="progressbar"
-                    style="width: ${progress}%;"
-                    aria-valuenow="${progress}"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                  ></div>
+                <div class="d-flex justify-content-between align-items-center">
+                  <!-- File name and status icon -->
+                  <h6 class="mb-0 w-25">${file.name} ${statusIcon}</h6>
+
+                  <!-- Progress bar -->
+                  <div class="progress w-50 mx-2">
+                    <div
+                      class="progress-bar"
+                      role="progressbar"
+                      style="width: ${progress}%;"
+                      aria-valuenow="${progress}"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    ></div>
+                  </div>
+
+                  <!-- Download button -->
+                  <button
+                    class="btn btn-outline-primary btn-sm"
+                    @click=${() => this.downloadSketch(file.name)}
+                    ?disabled=${progress < 100}
+                  >
+                    Download
+                  </button>
                 </div>
-              </div>
-              ${error
-                ? html`<div class="alert alert-danger" role="alert">${error}</div>`
-                : ''}
-              ${this.show_signatures && signature?.length
-                ? html`
-                    <details>
-                      <summary>See signature</summary>
-                      <pre>${signature}</pre>
-                    </details>
-                  `
-                : ''}
-            </li>
+
+                <!-- Error message, if any -->
+                ${error
+                  ? html`<div class="alert alert-danger mt-2" role="alert">${error}</div>`
+                  : ''}
+
+                <!-- Signature details, if any -->
+                ${this.show_signatures && signature?.length
+                  ? html`
+                      <details>
+                        <summary>See signature</summary>
+                        <pre>${signature}</pre>
+                      </details>
+                    `
+                  : ''}
+              </li>
             `;
           })}
         </ul>
       </div>
     `;
-  }
+}
+
 
   render() {
     return html`
@@ -265,26 +283,6 @@ export class MGnifySourmash extends LitElement {
 
         <!-- List of individual downloads -->
         ${this.renderSelectedFiles()}
-
-        ${Object.keys(this.signatures).length > 0
-          ? html`
-              <ul class="list-group mt-3">
-                ${Object.keys(this.signatures).map(
-                  (filename) => html`
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                      ${filename}
-                      <button
-                        class="btn btn-outline-primary btn-sm"
-                        @click=${() => this.downloadSketch(filename)}
-                      >
-                        Download
-                      </button>
-                    </li>
-                  `
-                )}
-              </ul>
-            `
-          : ''}
       </div>
     </body>
     `;
